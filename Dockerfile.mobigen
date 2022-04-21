@@ -1,0 +1,42 @@
+FROM alpine:3.15.4
+
+LABEL name="MinIO" \                                    
+  maintainer="irisdev@mobigen.com" \                           
+  vendor="Mobigen" \                                           
+  architecture="x86_64" \                                      
+  url="https://mobigen.com" \                                  
+  summary="MinIO is a High Performance Object Storage, API compatible with Amazon S3 cloud storage service." \
+  description="MinIO object storage is fundamentally different. Designed for performance and the S3 API, it is 100% open-source. MinIO is ideal for large, private cloud environments with stringent security requirements and delivers mission-critical availability across a diverse range of workloads."
+                                                               
+# For Alpine
+RUN \
+    apk update \
+    && apk upgrade --no-cache \
+    && apk --no-cache add \
+        tzdata \
+    && rm -rf /var/cache/apk/* 
+
+RUN cp /usr/share/zoneinfo/Asia/Seoul /etc/localtime         
+
+ENV MINIO_ACCESS_KEY_FILE=access_key \
+    MINIO_SECRET_KEY_FILE=secret_key \
+    MINIO_ROOT_USER_FILE=access_key \
+    MINIO_ROOT_PASSWORD_FILE=secret_key \
+    MINIO_CONFIG_ENV_FILE=config.env \
+    PATH=/opt/bin:$PATH
+
+RUN mkdir -p /opt/bin /data/angora
+
+COPY dockerscripts/docker-entrypoint.sh /usr/bin/docker-entrypoint.sh
+COPY ./minio /opt/bin/minio 
+
+RUN chmod 777 /opt/bin && chmod +x /opt/bin/minio && \
+     chmod +x /usr/bin/docker-entrypoint.sh 
+
+EXPOSE 9000
+
+ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
+
+VOLUME ["/data"]
+
+CMD ["minio", "server", "/data"]
